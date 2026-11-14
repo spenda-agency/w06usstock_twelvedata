@@ -31,11 +31,16 @@ def fetch_quotes(symbols, api_key):
     """
     res = requests.get(
         "https://api.twelvedata.com/quote",
-        params={"symbol": ",".join(symbols), "apikey": api_key},
+        params={"symbol": ",".join(symbols)},
+        headers={"Authorization": f"apikey {api_key}"},  # URL・ログにキーを出さない
         timeout=60,
     )
-    res.raise_for_status()
-    data = res.json()
+    try:
+        data = res.json()
+    except ValueError:
+        data = {}
+    if res.status_code != 200:
+        raise RuntimeError(f"Twelve Data HTTP {res.status_code}: {data.get('message', res.text[:300])}")
 
     if isinstance(data, dict) and data.get("status") == "error" and "code" in data:
         raise RuntimeError(f"Twelve Data error: {data.get('code')} {data.get('message')}")
@@ -54,7 +59,10 @@ def fetch_quotes(symbols, api_key):
 
 
 def main():
-    api_key = os.environ["TWELVEDATA_API_KEY"]
+    api_key = os.environ["TWELVEDATA_API_KEY"].strip()
+    if not api_key:
+        sys.exit("TWELVEDATA_API_KEY が空です")
+    print(f"API key length: {len(api_key)}")  # 通常は32文字
     creds = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
 
     ws = gspread.service_account_from_dict(creds).open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
