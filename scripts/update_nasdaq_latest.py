@@ -12,6 +12,7 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from decimal import ROUND_HALF_UP, Decimal
 
 import gspread
 import requests
@@ -51,7 +52,8 @@ def fetch_quotes(symbols, api_key):
         d = by_symbol.get(s) or {}
         close = d.get("close")
         if close not in (None, "") and d.get("status") != "error":
-            out[s] = float(close)
+            # 整数に四捨五入（Python の round は偶数丸めなので Decimal で四捨五入）
+            out[s] = int(Decimal(str(close)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
         else:
             out[s] = f"ERR: {d.get('message', 'no data')}"
             print(f"[warn] {s}: {out[s]}", file=sys.stderr)
