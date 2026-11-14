@@ -1,0 +1,24 @@
+name: Nasdaq最新 更新
+
+on:
+  schedule:
+    # 日本時間 火〜土 6:00（= UTC 月〜金 21:00、米国の各営業日の取引終了後）
+    # ※ GitHub の定期実行は混雑時に数分〜十数分遅れることがあります
+    - cron: "0 21 * * 1-5"
+  workflow_dispatch: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python scripts/update_nasdaq_latest.py
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          CHUNK_SIZE: "8"
