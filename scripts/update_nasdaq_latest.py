@@ -1,10 +1,10 @@
-"""Twelve Data から「Nasdaq最新」シート A列の銘柄の最新値を取得し、B列に書き込む。
+"""Twelve Data から対象シート（gid=2055700762） A列の銘柄の最新値を取得し、B列に書き込む。
 
 GitHub Actions から実行する想定。必要な環境変数:
   TWELVEDATA_API_KEY           Twelve Data の API キー
   GOOGLE_SERVICE_ACCOUNT_JSON  Google サービスアカウントの JSON キー（中身そのもの）
 任意:
-  SPREADSHEET_ID / SHEET_NAME / CHUNK_SIZE
+  SPREADSHEET_ID / SHEET_ID / CHUNK_SIZE
 """
 
 import json
@@ -18,7 +18,8 @@ import gspread
 import requests
 
 SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID", "1Q1xfafJ_lonuellGTdmGt0Mdjqas0NwXOOe0BJW0u9k")
-SHEET_NAME = os.environ.get("SHEET_NAME", "Nasdaq最新")
+# シート名は変わることがあるので、URL の gid（シートID）で特定する
+SHEET_ID = int(os.environ.get("SHEET_ID", "2055700762"))
 # 1分あたりのAPIクレジット上限（1銘柄=1クレジット）。Basic(無料)=8, Grow=55 など
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "8"))
 WAIT_SEC = 61
@@ -67,7 +68,8 @@ def main():
     print(f"API key length: {len(api_key)}")  # 通常は32文字
     creds = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
 
-    ws = gspread.service_account_from_dict(creds).open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
+    ws = gspread.service_account_from_dict(creds).open_by_key(SPREADSHEET_ID).get_worksheet_by_id(SHEET_ID)
+    print(f"sheet: {ws.title}")
     codes = [c.strip() for c in ws.col_values(1)[1:]]  # 1行目は見出し
     symbols = [c for c in dict.fromkeys(codes) if c]
     print(f"{len(symbols)} symbols")

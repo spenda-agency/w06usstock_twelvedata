@@ -1,4 +1,4 @@
-name: Nasdaq最新 更新
+name: Nasdaq最新値 更新
 
 on:
   schedule:
